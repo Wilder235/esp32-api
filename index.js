@@ -148,7 +148,51 @@ app.get("/erro", (req, res) => {
   `);
 
 });
+app.post("/point-pagamento", async (req, res) => {
 
+  try {
+
+    const { valor } = req.body;
+
+    const response = await axios.post(
+
+      "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
+
+      {
+        amount: Number(valor),
+        description: "Venda ESP32",
+        payment: {
+          installments: 1,
+          type: "credit_card"
+        }
+      },
+
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("POINT PAGAMENTO:");
+    console.log(JSON.stringify(response.data, null, 2));
+
+    res.json(response.data);
+
+  } catch (err) {
+
+    console.log("ERRO POINT:");
+
+    console.log(
+      err.response?.data || err.message
+    );
+
+    res.status(500).json(
+      err.response?.data || err.message
+    );
+  }
+});
 // ============================
 // CRIAR PAGAMENTO
 // ============================
