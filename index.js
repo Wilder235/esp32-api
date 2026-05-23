@@ -148,6 +148,41 @@ app.get("/erro", (req, res) => {
   `);
 
 });
+
+app.get("/device-status", async (req, res) => {
+
+  try {
+
+    const response = await axios.get(
+
+      "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032",
+
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+        }
+      }
+    );
+
+    console.log("DEVICE STATUS:");
+    console.log(JSON.stringify(response.data, null, 2));
+
+    res.json(response.data);
+
+  } catch (err) {
+
+    console.log("ERRO DEVICE:");
+
+    console.log(
+      err.response?.data || err.message
+    );
+
+    res.status(500).json(
+      err.response?.data || err.message
+    );
+  }
+});
+
 app.post("/point-pagamento", async (req, res) => {
 
   try {
