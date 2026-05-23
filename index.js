@@ -137,7 +137,7 @@ app.post("/criar-pagamento", async (req, res) => {
       external_reference: internalId,
 
       notification_url:
-        "https://esp32-api-production.up.railway.app/webhook",
+        "https://esp32-api-production-9fa8.up.railway.app/webhook",
 
       back_urls: {
 
