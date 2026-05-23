@@ -27,7 +27,7 @@ app.get("/terminals", async (req, res) => {
 
   try {
 
-    const response = await axios.get(
+    const pos = await axios.get(
       "https://api.mercadopago.com/pos",
       {
         headers: {
@@ -36,10 +36,24 @@ app.get("/terminals", async (req, res) => {
       }
     );
 
-    console.log("TERMINAIS:");
-    console.log(JSON.stringify(response.data, null, 2));
+    const devices = await axios.get(
+      "https://api.mercadopago.com/point/integration-api/devices",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+        }
+      }
+    );
 
-    res.json(response.data);
+    const resultado = {
+      pos: pos.data,
+      devices: devices.data
+    };
+
+    console.log("TERMINAIS:");
+    console.log(JSON.stringify(resultado, null, 2));
+
+    res.json(resultado);
 
   } catch (err) {
 
@@ -51,6 +65,7 @@ app.get("/terminals", async (req, res) => {
     );
   }
 });
+
 // ============================
 // TESTE WEBHOOK
 // ============================
