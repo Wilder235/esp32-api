@@ -142,13 +142,13 @@ app.post("/criar-pagamento", async (req, res) => {
       back_urls: {
 
         success:
-          "https://antidote-emphases-widen.ngrok-free.dev/pago",
+          "https://esp32-api-production-9fa8.up.railway.app/pago",
 
         failure:
-          "https://antidote-emphases-widen.ngrok-free.dev/erro",
+          "https://esp32-api-production-9fa8.up.railway.app/erro",
 
         pending:
-          "https://antidote-emphases-widen.ngrok-free.dev/pendente"
+          "https://esp32-api-production-9fa8.up.railway.app/pendente"
       },
 
       auto_return: "approved"
