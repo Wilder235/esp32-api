@@ -159,7 +159,7 @@ app.post("/point-pagamento", async (req, res) => {
       "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
 
       {
-        amount: Number(valor),
+        amount: Math.round(Number(valor) * 100),
         description: "Venda ESP32",
         payment: {
           installments: 1,
