@@ -229,6 +229,8 @@ app.post("/webhook", async (req, res) => {
     );
 
     const payment = result.data;
+	console.log("MERCHANT ORDER ID:", payment.order?.id);
+	console.log("PAYMENT ID:", payment.id);
 
     console.log("STATUS:", payment.status);
 
