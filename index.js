@@ -1,3 +1,4 @@
+```javascript
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -23,6 +24,7 @@ console.log(
 app.get("/", (req, res) => {
   res.send("API rodando OK");
 });
+
 app.get("/terminals", async (req, res) => {
 
   try {
@@ -183,6 +185,9 @@ app.get("/device-status", async (req, res) => {
   }
 });
 
+// ============================
+// POINT PAGAMENTO
+// ============================
 app.post("/point-pagamento", async (req, res) => {
 
   try {
@@ -195,11 +200,17 @@ app.post("/point-pagamento", async (req, res) => {
 
       {
         amount: Math.round(Number(valor) * 100),
+
         description: "Venda ESP32",
+
         payment: {
-          installments: 1,
-          type: "credit_card"
+          methods: [
+            "credit_card",
+            "debit_card",
+            "pix"
+          ]
         }
+
       },
 
       {
@@ -228,6 +239,7 @@ app.post("/point-pagamento", async (req, res) => {
     );
   }
 });
+
 // ============================
 // CRIAR PAGAMENTO
 // ============================
@@ -334,7 +346,6 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // ignora merchant_order
     if (req.body?.topic === "merchant_order") {
       console.log("IGNORANDO merchant_order");
       return res.sendStatus(200);
@@ -350,8 +361,9 @@ app.post("/webhook", async (req, res) => {
     );
 
     const payment = result.data;
-	console.log("MERCHANT ORDER ID:", payment.order?.id);
-	console.log("PAYMENT ID:", payment.id);
+
+    console.log("MERCHANT ORDER ID:", payment.order?.id);
+    console.log("PAYMENT ID:", payment.id);
 
     console.log("STATUS:", payment.status);
 
@@ -362,7 +374,6 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // evita dupla entrega
     if (pagamentos[internalId]?.status === "entregue") {
 
       console.log("JÁ ENTREGUE");
