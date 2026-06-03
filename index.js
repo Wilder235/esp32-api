@@ -25,6 +25,9 @@ app.get("/", (req, res) => {
   res.send("API rodando OK");
 });
 
+// ============================
+// TERMINAIS
+// ============================
 app.get("/terminals", async (req, res) => {
 
   try {
@@ -69,7 +72,7 @@ app.get("/terminals", async (req, res) => {
 });
 
 // ============================
-// TESTE WEBHOOK
+// WEBHOOK TESTE
 // ============================
 app.get("/webhook", (req, res) => {
   res.send("Webhook OK");
@@ -88,7 +91,6 @@ app.get("/pago", (req, res) => {
         padding-top: 80px;
         background: #f5f5f5;
       ">
-
         <h1 style="color: green;">
           ✅ PAGAMENTO APROVADO
         </h1>
@@ -96,7 +98,6 @@ app.get("/pago", (req, res) => {
         <h2>
           Seu produto será liberado.
         </h2>
-
       </body>
     </html>
   `);
@@ -116,11 +117,9 @@ app.get("/pendente", (req, res) => {
         padding-top: 80px;
         background: #f5f5f5;
       ">
-
         <h1 style="color: orange;">
           ⌛ PAGAMENTO PENDENTE
         </h1>
-
       </body>
     </html>
   `);
@@ -140,25 +139,24 @@ app.get("/erro", (req, res) => {
         padding-top: 80px;
         background: #f5f5f5;
       ">
-
         <h1 style="color: red;">
           ❌ PAGAMENTO NÃO APROVADO
         </h1>
-
       </body>
     </html>
   `);
 
 });
 
+// ============================
+// DEVICE STATUS
+// ============================
 app.get("/device-status", async (req, res) => {
 
   try {
 
     const response = await axios.get(
-
       "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032",
-
       {
         headers: {
           Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
@@ -174,10 +172,7 @@ app.get("/device-status", async (req, res) => {
   } catch (err) {
 
     console.log("ERRO DEVICE:");
-
-    console.log(
-      err.response?.data || err.message
-    );
+    console.log(err.response?.data || err.message);
 
     res.status(500).json(
       err.response?.data || err.message
@@ -195,7 +190,6 @@ app.post("/point-pagamento", async (req, res) => {
     const { valor } = req.body;
 
     const response = await axios.post(
-
       "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
 
       {
@@ -210,7 +204,6 @@ app.post("/point-pagamento", async (req, res) => {
             "pix"
           ]
         }
-
       },
 
       {
@@ -229,10 +222,7 @@ app.post("/point-pagamento", async (req, res) => {
   } catch (err) {
 
     console.log("ERRO POINT:");
-
-    console.log(
-      err.response?.data || err.message
-    );
+    console.log(err.response?.data || err.message);
 
     res.status(500).json(
       err.response?.data || err.message
@@ -311,9 +301,7 @@ app.post("/criar-pagamento", async (req, res) => {
 
   } catch (err) {
 
-    console.log(
-      "ERRO AO CRIAR PAGAMENTO:"
-    );
+    console.log("ERRO AO CRIAR PAGAMENTO:");
 
     console.log(
       err.response?.data || err.message
@@ -364,7 +352,6 @@ app.post("/webhook", async (req, res) => {
 
     console.log("MERCHANT ORDER ID:", payment.order?.id);
     console.log("PAYMENT ID:", payment.id);
-
     console.log("STATUS:", payment.status);
 
     const internalId = payment.external_reference;
@@ -419,7 +406,7 @@ app.post("/webhook", async (req, res) => {
 });
 
 // ============================
-// ESP32 CONSULTA LIBERAÇÃO
+// LIBERAR PRODUTO
 // ============================
 app.get("/liberar/:id", (req, res) => {
 
