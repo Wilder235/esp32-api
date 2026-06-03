@@ -25,7 +25,8 @@ app.get("/", (req, res) => {
 });
 
 // ============================
-// CRIAR PAGAMENTO + POINT
+// CRIAR PAGAMENTO
+// POINT + PIX DIRETO
 // ============================
 app.post("/criar-pagamento", async (req, res) => {
 
@@ -34,7 +35,7 @@ app.post("/criar-pagamento", async (req, res) => {
     const { valor } = req.body;
 
     // ===================================
-    // ABRE POINT EM BACKGROUND
+    // ABRIR POINT EM BACKGROUND
     // ===================================
 
     setTimeout(async () => {
@@ -78,7 +79,7 @@ app.post("/criar-pagamento", async (req, res) => {
     }, 100);
 
     // ===================================
-    // PIX / CHECKOUT
+    // PIX DIRETO
     // ===================================
 
     const internalId = "esp32-" + Date.now();
@@ -89,70 +90,60 @@ app.post("/criar-pagamento", async (req, res) => {
       criadoEm: new Date().toISOString()
     };
 
-    const preference = {
+    const pixResponse = await axios.post(
 
-      items: [
-        {
-          title: "Produto ESP32",
-          quantity: 1,
-          unit_price: Number(valor)
+      "https://api.mercadopago.com/v1/payments",
+
+      {
+        transaction_amount: Number(valor),
+
+        description: "Produto ESP32",
+
+        payment_method_id: "pix",
+
+        external_reference: internalId,
+
+        payer: {
+          email: "comprador@email.com"
         }
-      ],
-
-      payment_methods: {
-
-        excluded_payment_types: [
-          {
-            id: "credit_card"
-          },
-          {
-            id: "debit_card"
-          }
-        ],
-
-        installments: 1
       },
-
-      external_reference: internalId,
-
-      notification_url:
-        "https://esp32-api-production-9fa8.up.railway.app/webhook",
-
-      back_urls: {
-
-        success:
-          "https://esp32-api-production-9fa8.up.railway.app/pago",
-
-        failure:
-          "https://esp32-api-production-9fa8.up.railway.app/erro",
-
-        pending:
-          "https://esp32-api-production-9fa8.up.railway.app/pendente"
-      },
-
-      auto_return: "approved"
-    };
-
-    const response = await axios.post(
-
-      "https://api.mercadopago.com/checkout/preferences",
-
-      preference,
 
       {
         headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json"
         },
         timeout: 10000
       }
     );
 
-    console.log("PAGAMENTO CRIADO:", internalId);
+    const pagamento = pixResponse.data;
+
+    console.log("PIX CRIADO:");
+    console.log(JSON.stringify(pagamento, null, 2));
 
     return res.json({
+
       internal_id: internalId,
-      id: response.data.id,
-      link: response.data.init_point
+
+      payment_id: pagamento.id,
+
+      status: pagamento.status,
+
+      qr_code:
+        pagamento.point_of_interaction
+          ?.transaction_data
+          ?.qr_code,
+
+      qr_code_base64:
+        pagamento.point_of_interaction
+          ?.transaction_data
+          ?.qr_code_base64,
+
+      ticket_url:
+        pagamento.point_of_interaction
+          ?.transaction_data
+          ?.ticket_url
     });
 
   } catch (err) {
@@ -186,7 +177,9 @@ app.post("/webhook", async (req, res) => {
     }
 
     const result = await axios.get(
+
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
+
       {
         headers: {
           Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
