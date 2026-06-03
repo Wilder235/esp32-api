@@ -99,6 +99,20 @@ app.post("/criar-pagamento", async (req, res) => {
         }
       ],
 
+      payment_methods: {
+
+        excluded_payment_types: [
+          {
+            id: "credit_card"
+          },
+          {
+            id: "debit_card"
+          }
+        ],
+
+        installments: 1
+      },
+
       external_reference: internalId,
 
       notification_url:
