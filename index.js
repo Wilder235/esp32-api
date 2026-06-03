@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import axios from "axios";
+import crypto from "crypto";
 
 const app = express();
 
@@ -26,7 +27,7 @@ app.get("/", (req, res) => {
 
 // ============================
 // CRIAR PAGAMENTO
-// POINT + PIX DIRETO
+// POINT + PIX
 // ============================
 app.post("/criar-pagamento", async (req, res) => {
 
@@ -35,7 +36,7 @@ app.post("/criar-pagamento", async (req, res) => {
     const { valor } = req.body;
 
     // ===================================
-    // ABRIR POINT EM BACKGROUND
+    // POINT EM BACKGROUND
     // ===================================
 
     setTimeout(async () => {
@@ -90,6 +91,8 @@ app.post("/criar-pagamento", async (req, res) => {
       criadoEm: new Date().toISOString()
     };
 
+    const idempotencyKey = crypto.randomUUID();
+
     const pixResponse = await axios.post(
 
       "https://api.mercadopago.com/v1/payments",
@@ -111,8 +114,10 @@ app.post("/criar-pagamento", async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": idempotencyKey
         },
+
         timeout: 10000
       }
     );
@@ -266,4 +271,3 @@ app.listen(3000, () => {
   console.log("");
 
 });
-
