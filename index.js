@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -198,11 +197,8 @@ app.post("/point-pagamento", async (req, res) => {
         description: "Venda ESP32",
 
         payment: {
-          methods: [
-            "credit_card",
-            "debit_card",
-            "pix"
-          ]
+          installments: 1,
+          type: "credit_card"
         }
       },
 
