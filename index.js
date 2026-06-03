@@ -34,7 +34,7 @@ app.post("/criar-pagamento", async (req, res) => {
 
   try {
 
-    const { valor, metodo } = req.body;
+    const { valor } = req.body;
 
     const internalId =
       "esp32-" + Date.now();
@@ -43,297 +43,180 @@ app.post("/criar-pagamento", async (req, res) => {
 
       status: "pendente",
 
-      valor: Number(valor),
-
-      metodo,
+      valor:
+        Number(valor),
 
       criadoEm:
         new Date().toISOString()
     };
 
     // ==================================================
-    // PIX
+    // ABRIR POINT
+    // MENU:
+    // CRÉDITO / DÉBITO
     // ==================================================
 
-    if (metodo === "pix") {
+    setTimeout(async () => {
 
-      // ===============================================
-      // TENTAR ABRIR PIX NA POINT
-      // ===============================================
+      try {
 
-      setTimeout(async () => {
+        const pointResponse =
+          await axios.post(
 
-        try {
+            "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
 
-          const pointPixResponse =
-            await axios.post(
+            {
+              amount:
+                Math.round(
+                  Number(valor) * 100
+                ),
 
-              "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
+              description:
+                "Venda ESP32"
+            },
 
-              {
-                amount:
-                  Math.round(
-                    Number(valor) * 100
-                  ),
+            {
+              headers: {
 
-                description:
-                  "Venda ESP32 PIX",
+                Authorization:
+                  `Bearer ${process.env.MP_ACCESS_TOKEN}`,
 
-                payment_mode: "qr"
+                "Content-Type":
+                  "application/json"
               },
 
-              {
-                headers: {
-
-                  Authorization:
-                    `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-
-                  "Content-Type":
-                    "application/json"
-                },
-
-                timeout: 5000
-              }
-            );
-
-          console.log("");
-          console.log("POINT PIX OK");
-
-          console.log(
-            JSON.stringify(
-              pointPixResponse.data,
-              null,
-              2
-            )
+              timeout: 10000
+            }
           );
 
-        } catch (err) {
+        console.log("");
+        console.log("================================");
+        console.log("POINT ABERTA");
+        console.log("================================");
 
-          console.log("");
-          console.log("POINT PIX FALHOU");
+        console.log(
+          JSON.stringify(
+            pointResponse.data,
+            null,
+            2
+          )
+        );
 
-          console.log(
-            err.response?.data ||
-            err.message
-          );
+      } catch (err) {
+
+        console.log("");
+        console.log("ERRO POINT");
+
+        console.log(
+          err.response?.data ||
+          err.message
+        );
+      }
+
+    }, 100);
+
+    // ==================================================
+    // PIX EXTERNO
+    // ==================================================
+
+    const idempotencyKey =
+      crypto.randomUUID();
+
+    const pixResponse =
+      await axios.post(
+
+        "https://api.mercadopago.com/v1/payments",
+
+        {
+          transaction_amount:
+            Number(valor),
+
+          description:
+            "Produto ESP32",
+
+          payment_method_id:
+            "pix",
+
+          external_reference:
+            internalId,
+
+          payer: {
+            email:
+              "comprador@email.com"
+          }
+        },
+
+        {
+          headers: {
+
+            Authorization:
+              `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+
+            "Content-Type":
+              "application/json",
+
+            "X-Idempotency-Key":
+              idempotencyKey
+          },
+
+          timeout: 10000
         }
+      );
 
-      }, 100);
+    const pagamento =
+      pixResponse.data;
 
-      // ===============================================
-      // PIX EXTERNO REAL
-      // ===============================================
+    console.log("");
+    console.log("================================");
+    console.log("PIX GERADO");
+    console.log("================================");
 
-      const idempotencyKey =
-        crypto.randomUUID();
-
-      const pixResponse =
-        await axios.post(
-
-          "https://api.mercadopago.com/v1/payments",
-
-          {
-            transaction_amount:
-              Number(valor),
-
-            description:
-              "Produto ESP32",
-
-            payment_method_id:
-              "pix",
-
-            external_reference:
-              internalId,
-
-            payer: {
-              email:
-                "comprador@email.com"
-            }
-          },
-
-          {
-            headers: {
-
-              Authorization:
-                `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-
-              "Content-Type":
-                "application/json",
-
-              "X-Idempotency-Key":
-                idempotencyKey
-            },
-
-            timeout: 10000
-          }
-        );
-
-      const pagamento =
-        pixResponse.data;
-
-      return res.json({
-
-        internal_id:
-          internalId,
-
-        metodo:
-          "pix",
-
-        payment_id:
-          pagamento.id,
-
-        status:
-          pagamento.status,
-
-        qr_code:
-          pagamento
-            .point_of_interaction
-            ?.transaction_data
-            ?.qr_code,
-
-        qr_code_base64:
-          pagamento
-            .point_of_interaction
-            ?.transaction_data
-            ?.qr_code_base64,
-
-        ticket_url:
-          pagamento
-            .point_of_interaction
-            ?.transaction_data
-            ?.ticket_url
-      });
-    }
+    console.log(
+      JSON.stringify(
+        pagamento,
+        null,
+        2
+      )
+    );
 
     // ==================================================
-    // CRÉDITO
+    // RETORNO
     // ==================================================
 
-    if (metodo === "credito") {
+    return res.json({
 
-      const pointResponse =
-        await axios.post(
+      internal_id:
+        internalId,
 
-          "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
+      status:
+        pagamento.status,
 
-          {
-            amount:
-              Math.round(
-                Number(valor) * 100
-              ),
+      payment_id:
+        pagamento.id,
 
-            description:
-              "Venda ESP32 Crédito",
+      qr_code:
+        pagamento
+          .point_of_interaction
+          ?.transaction_data
+          ?.qr_code,
 
-            payment: {
+      qr_code_base64:
+        pagamento
+          .point_of_interaction
+          ?.transaction_data
+          ?.qr_code_base64,
 
-              installments: 1,
-
-              type:
-                "credit_card"
-            }
-          },
-
-          {
-            headers: {
-
-              Authorization:
-                `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-
-              "Content-Type":
-                "application/json"
-            },
-
-            timeout: 10000
-          }
-        );
-
-      return res.json({
-
-        internal_id:
-          internalId,
-
-        metodo:
-          "credito",
-
-        status:
-          "point_aberta",
-
-        point_response:
-          pointResponse.data
-      });
-    }
-
-    // ==================================================
-    // DÉBITO
-    // ==================================================
-
-    if (metodo === "debito") {
-
-      const pointResponse =
-        await axios.post(
-
-          "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
-
-          {
-            amount:
-              Math.round(
-                Number(valor) * 100
-              ),
-
-            description:
-              "Venda ESP32 Débito",
-
-            payment: {
-              type:
-                "debit_card"
-            }
-          },
-
-          {
-            headers: {
-
-              Authorization:
-                `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-
-              "Content-Type":
-                "application/json"
-            },
-
-            timeout: 10000
-          }
-        );
-
-      return res.json({
-
-        internal_id:
-          internalId,
-
-        metodo:
-          "debito",
-
-        status:
-          "point_aberta",
-
-        point_response:
-          pointResponse.data
-      });
-    }
-
-    // ==================================================
-    // MÉTODO INVÁLIDO
-    // ==================================================
-
-    return res.status(400).json({
-
-      erro:
-        "Método inválido"
+      ticket_url:
+        pagamento
+          .point_of_interaction
+          ?.transaction_data
+          ?.ticket_url
     });
 
   } catch (err) {
 
     console.log("");
-    console.log("ERRO PAGAMENTO:");
+    console.log("ERRO PAGAMENTO");
 
     console.log(
       err.response?.data ||
@@ -373,147 +256,6 @@ app.get("/status/:id", (req, res) => {
 // ======================================================
 // START
 // ======================================================
-
-
-
-
-
-
-// ======================================================
-// TESTE POINT
-// ======================================================
-
-app.post("/teste-point", async (req, res) => {
-
-  try {
-
-    const { valor, modo } = req.body;
-
-    let payload = {
-
-      amount:
-        Math.round(Number(valor) * 100),
-
-      description:
-        "Teste Point"
-    };
-
-    // ==============================================
-    // MODO 1
-    // ==============================================
-
-    if (modo == 1) {
-
-      payload.payment = {
-        type: "card"
-      };
-    }
-
-    // ==============================================
-    // MODO 2
-    // ==============================================
-
-    if (modo == 2) {
-
-      payload.payment_mode = "qr";
-    }
-
-    // ==============================================
-    // MODO 3
-    // ==============================================
-
-    if (modo == 3) {
-
-      payload.payment = {
-        type: "qr"
-      };
-    }
-
-    // ==============================================
-    // MODO 4
-    // ==============================================
-
-    if (modo == 4) {
-
-      // sem payment
-    }
-
-    // ==============================================
-    // MODO 5
-    // ==============================================
-
-    if (modo == 5) {
-
-      payload.payment_method_id = "pix";
-    }
-
-    console.log("");
-    console.log("================================");
-    console.log("TESTE POINT");
-    console.log("================================");
-
-    console.log(
-      JSON.stringify(payload, null, 2)
-    );
-
-    const response =
-      await axios.post(
-
-        "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
-
-        payload,
-
-        {
-          headers: {
-
-            Authorization:
-              `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-
-            "Content-Type":
-              "application/json"
-          },
-
-          timeout: 10000
-        }
-      );
-
-    return res.json({
-
-      sucesso: true,
-
-      modo,
-
-      payload,
-
-      resposta:
-        response.data
-    });
-
-  } catch (err) {
-
-    console.log("");
-    console.log("ERRO TESTE POINT");
-
-    console.log(
-      err.response?.data ||
-      err.message
-    );
-
-    return res.status(500).json({
-
-      erro:
-        err.response?.data ||
-        err.message
-    });
-  }
-});
-
-
-
-
-
-
-
 
 app.listen(3000, () => {
 
