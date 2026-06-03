@@ -54,7 +54,7 @@ app.post("/criar-pagamento", async (req, res) => {
 
             payment: {
               installments: 1,
-              type: "credit_card"
+              type: "card"
             }
           },
 
