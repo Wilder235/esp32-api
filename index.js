@@ -1,4 +1,3 @@
-```javascript
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -19,7 +18,7 @@ console.log(
 );
 
 // ============================
-// TESTE API
+// HOME
 // ============================
 app.get("/", (req, res) => {
   res.send("API rodando OK");
@@ -34,47 +33,53 @@ app.post("/criar-pagamento", async (req, res) => {
 
     const { valor } = req.body;
 
-    // ============================
-    // ABRE POINT AUTOMATICAMENTE
-    // ============================
+    // ===================================
+    // ABRE POINT EM BACKGROUND
+    // ===================================
 
-    axios.post(
+    setTimeout(async () => {
 
-      "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
+      try {
 
-      {
-        amount: Math.round(Number(valor) * 100),
+        const pointResponse = await axios.post(
 
-        description: "Venda ESP32",
+          "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
 
-        payment: {
-          installments: 1,
-          type: "credit_card"
-        }
-      },
+          {
+            amount: Math.round(Number(valor) * 100),
 
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+            description: "Venda ESP32",
+
+            payment: {
+              installments: 1,
+              type: "credit_card"
+            }
+          },
+
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+              "Content-Type": "application/json"
+            },
+            timeout: 5000
+          }
+        );
+
+        console.log("POINT OK:");
+        console.log(JSON.stringify(pointResponse.data, null, 2));
+
+      } catch (err) {
+
+        console.log("ERRO POINT:");
+        console.log(err.response?.data || err.message);
+
       }
 
-    ).then((response) => {
+    }, 100);
 
-      console.log("POINT OK:");
-      console.log(JSON.stringify(response.data, null, 2));
-
-    }).catch((err) => {
-
-      console.log("ERRO POINT:");
-      console.log(err.response?.data || err.message);
-
-    });
-
-    // ============================
+    // ===================================
     // PIX / CHECKOUT
-    // ============================
+    // ===================================
 
     const internalId = "esp32-" + Date.now();
 
@@ -123,13 +128,14 @@ app.post("/criar-pagamento", async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
-        }
+        },
+        timeout: 10000
       }
     );
 
     console.log("PAGAMENTO CRIADO:", internalId);
 
-    res.json({
+    return res.json({
       internal_id: internalId,
       id: response.data.id,
       link: response.data.init_point
@@ -143,7 +149,7 @@ app.post("/criar-pagamento", async (req, res) => {
       err.response?.data || err.message
     );
 
-    res.status(500).json(
+    return res.status(500).json(
       err.response?.data || { erro: err.message }
     );
   }
@@ -253,4 +259,4 @@ app.listen(3000, () => {
   console.log("");
 
 });
-```
+
