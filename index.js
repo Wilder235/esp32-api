@@ -374,6 +374,147 @@ app.get("/status/:id", (req, res) => {
 // START
 // ======================================================
 
+
+
+
+
+
+// ======================================================
+// TESTE POINT
+// ======================================================
+
+app.post("/teste-point", async (req, res) => {
+
+  try {
+
+    const { valor, modo } = req.body;
+
+    let payload = {
+
+      amount:
+        Math.round(Number(valor) * 100),
+
+      description:
+        "Teste Point"
+    };
+
+    // ==============================================
+    // MODO 1
+    // ==============================================
+
+    if (modo == 1) {
+
+      payload.payment = {
+        type: "card"
+      };
+    }
+
+    // ==============================================
+    // MODO 2
+    // ==============================================
+
+    if (modo == 2) {
+
+      payload.payment_mode = "qr";
+    }
+
+    // ==============================================
+    // MODO 3
+    // ==============================================
+
+    if (modo == 3) {
+
+      payload.payment = {
+        type: "qr"
+      };
+    }
+
+    // ==============================================
+    // MODO 4
+    // ==============================================
+
+    if (modo == 4) {
+
+      // sem payment
+    }
+
+    // ==============================================
+    // MODO 5
+    // ==============================================
+
+    if (modo == 5) {
+
+      payload.payment_method_id = "pix";
+    }
+
+    console.log("");
+    console.log("================================");
+    console.log("TESTE POINT");
+    console.log("================================");
+
+    console.log(
+      JSON.stringify(payload, null, 2)
+    );
+
+    const response =
+      await axios.post(
+
+        "https://api.mercadopago.com/point/integration-api/devices/NEWLAND_N950__N950NCD300351032/payment-intents",
+
+        payload,
+
+        {
+          headers: {
+
+            Authorization:
+              `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+
+            "Content-Type":
+              "application/json"
+          },
+
+          timeout: 10000
+        }
+      );
+
+    return res.json({
+
+      sucesso: true,
+
+      modo,
+
+      payload,
+
+      resposta:
+        response.data
+    });
+
+  } catch (err) {
+
+    console.log("");
+    console.log("ERRO TESTE POINT");
+
+    console.log(
+      err.response?.data ||
+      err.message
+    );
+
+    return res.status(500).json({
+
+      erro:
+        err.response?.data ||
+        err.message
+    });
+  }
+});
+
+
+
+
+
+
+
+
 app.listen(3000, () => {
 
   console.log("");
